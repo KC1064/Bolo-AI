@@ -6,8 +6,20 @@ function App() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [backendStatus, setBackendStatus] = useState("checking");
+  const [selectedVoice, setSelectedVoice] = useState("en-male"); // Default voice
   const audioRef = useRef(null);
   const currentAudioUrl = useRef(null); // Track current audio URL for cleanup
+  const [isTranslating, setIsTranslating] = useState(false);
+
+  // Voice options
+  const voiceOptions = [
+    { value: "en-male", label: "🇺🇸 English - Male", language: "English" },
+    { value: "en-female", label: "🇺🇸 English - Female", language: "English" },
+    { value: "hi-male", label: "🇮🇳 Hindi - Male", language: "Hindi" },
+    { value: "hi-female", label: "🇮🇳 Hindi - Female", language: "Hindi" },
+    { value: "ja-male", label: "🇯🇵 Japanese - Male", language: "Japanese" },
+    { value: "ja-female", label: "🇯🇵 Japanese - Female", language: "Japanese" },
+  ];
 
   // Health check on mount
   useEffect(() => {
@@ -39,6 +51,7 @@ function App() {
     }
   };
 
+  //Sending request and performing checks on input
   const handleSpeak = async () => {
     const trimmedText = textInput.trim();
 
@@ -67,7 +80,10 @@ function App() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ text: trimmedText }),
+        body: JSON.stringify({
+          text: trimmedText,
+          voice: selectedVoice, // Include selected voice in the request
+        }),
       });
 
       console.log("Response status:", response.status);
@@ -84,7 +100,9 @@ function App() {
             const errorJson = await response.json();
             errorDetail = errorJson.detail || errorDetail;
             if (Array.isArray(errorDetail)) {
-              errorDetail = errorDetail.map(e => e.msg || JSON.stringify(e)).join("; ");
+              errorDetail = errorDetail
+                .map((e) => e.msg || JSON.stringify(e))
+                .join("; ");
             }
           } else {
             errorDetail = await response.text();
@@ -181,6 +199,11 @@ function App() {
     }
   };
 
+  const getSelectedVoiceLabel = () => {
+    const voice = voiceOptions.find((v) => v.value === selectedVoice);
+    return voice ? voice.label : "Unknown Voice";
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-700 p-4 sm:p-6">
       <div className="bg-gray-800 p-6 sm:p-8 rounded-xl shadow-xl w-full max-w-2xl">
@@ -193,11 +216,55 @@ function App() {
           </p>
         </div>
 
+        {/* Backend Status Indicator */}
+        <div className="mb-4 flex justify-center">
+          <div
+            className={`px-3 py-1 rounded-full text-xs font-medium ${
+              backendStatus === "ready"
+                ? "bg-green-900/50 text-green-300 border border-green-500"
+                : backendStatus === "checking"
+                ? "bg-yellow-900/50 text-yellow-300 border border-yellow-500"
+                : "bg-red-900/50 text-red-300 border border-red-500"
+            }`}
+          >
+            {backendStatus === "ready" && "✅ Backend Ready"}
+            {backendStatus === "checking" && "🔄 Checking Backend..."}
+            {backendStatus === "unhealthy" && "❌ Backend Unavailable"}
+          </div>
+        </div>
+
+        {/* Voice Selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            🎭 Select Voice
+          </label>
+          <select
+            value={selectedVoice}
+            onChange={(e) => setSelectedVoice(e.target.value)}
+            disabled={isLoading}
+            className="w-full p-3 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                       transition-all duration-200 ease-in-out disabled:bg-gray-600 disabled:cursor-not-allowed"
+          >
+            {voiceOptions.map((voice) => (
+              <option key={voice.value} value={voice.value}>
+                {voice.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-400 mt-1">
+            Currently selected: {getSelectedVoiceLabel()}
+          </p>
+        </div>
+
         {/* Text Input Area */}
         <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            📝 Enter Text to Speak
+          </label>
           <div className="relative">
             <textarea
-              className="w-full h-40 p-4 text-gray-200 text-base bg-gray-700 border border-gray-600 rounded-lg
+              className="w-full h-30 p-4 text-gray-200 text-base bg-gray-700 border border-gray-600 rounded-lg
                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                          transition-all duration-200 ease-in-out resize-none"
               placeholder="Type or paste your text here... (Ctrl+Enter to generate speech)"
@@ -205,10 +272,10 @@ function App() {
               onChange={(e) => setTextInput(e.target.value)}
               onKeyDown={handleKeyPress}
               disabled={isLoading}
-              maxLength={5000}
+              maxLength={500}
             />
             <div className="absolute bottom-2 right-2 text-xs text-gray-400">
-              {textInput.length}/5000
+              {textInput.length}/500
             </div>
           </div>
         </div>
@@ -217,7 +284,9 @@ function App() {
         <div className="mb-6 flex gap-3">
           <button
             onClick={handleSpeak}
-            disabled={isLoading || !textInput.trim()}
+            disabled={
+              isLoading || !textInput.trim() || backendStatus !== "ready"
+            }
             className="flex-1 py-3 px-6 bg-blue-600 text-white font-semibold rounded-lg
                        shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500
                        focus:ring-offset-2 transition-all duration-300 ease-in-out
@@ -289,7 +358,35 @@ function App() {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 ></path>
               </svg>
-              Generating audio, please wait...
+              Generating audio with {getSelectedVoiceLabel()}...
+            </p>
+          </div>
+        )}
+
+        {isTranslating && (
+          <div className="mb-4 p-3 bg-yellow-900/50 border border-yellow-500 rounded-lg">
+            <p className="text-yellow-300 text-sm flex items-center">
+              <svg
+                className="animate-spin -ml-1 mr-3 h-4 w-4 text-yellow-300"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Translating to selected language...
             </p>
           </div>
         )}
@@ -303,7 +400,7 @@ function App() {
         {success && (
           <div className="mb-4 p-3 bg-green-900/50 border border-green-500 rounded-lg">
             <p className="text-green-300 text-sm">
-              ✅ Audio generated successfully!
+              ✅ Audio generated successfully with {getSelectedVoiceLabel()}!
             </p>
           </div>
         )}
@@ -328,6 +425,9 @@ function App() {
         <div className="mt-4 text-center">
           <p className="text-gray-400 text-xs">
             💡 Tip: Use Ctrl+Enter as a keyboard shortcut to generate speech
+          </p>
+          <p className="text-gray-400 text-xs mt-1">
+            🌍 Supports English, Hindi (हिंदी), and Japanese (日本語) voices
           </p>
         </div>
       </div>
