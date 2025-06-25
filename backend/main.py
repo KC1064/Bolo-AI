@@ -27,12 +27,11 @@ def _patched_torch_load(
 torch.load = _patched_torch_load  # ✅ Apply monkey patch
 
 
-# ✅ FastAPI app and CORS setup
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For dev; replace with frontend domain in prod
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -54,7 +53,7 @@ torch.load = _original_torch_load
 
 class TextPrompt(BaseModel):
     text: str
-    voice: str = None  # Optional voice preset
+    voice: str = None  
 
 
 # Voice preset mapping (frontend value -> Bark voice_preset)
@@ -66,7 +65,7 @@ VOICE_PRESET_MAP = {
     "ja-male": "v2/ja_speaker_2",
     "ja-female": "v2/ja_speaker_0",
 }
-DEFAULT_VOICE_PRESET = "v2/en_speaker_2"  # Fallback to English Male
+DEFAULT_VOICE_PRESET = "v2/en_speaker_2"  
 
 
 @app.get("/health")
@@ -85,7 +84,7 @@ def speak(prompt: TextPrompt):
     if not prompt.text.strip():
         raise HTTPException(status_code=400, detail="Text input is empty.")
 
-    if len(prompt.text) > 5000:
+    if len(prompt.text) > 500:
         raise HTTPException(
             status_code=413, detail="Text too long. Max 5000 characters."
         )

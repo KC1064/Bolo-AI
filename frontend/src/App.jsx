@@ -1,4 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
+import VoiceSelector from "./components/VoiceSelector";
+import TextInputArea from "./components/TextInputArea";
+import ActionButtons from "./components/ActionButtons";
+import StatusMessage from "./components/StatusMessage";
+import AudioPlayer from "./components/AudioPlayer";
+import Instructions from "./components/Instructions";
 
 function App() {
   const [textInput, setTextInput] = useState("");
@@ -234,202 +240,47 @@ function App() {
         </div>
 
         {/* Voice Selection */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            🎭 Select Voice
-          </label>
-          <select
-            value={selectedVoice}
-            onChange={(e) => setSelectedVoice(e.target.value)}
-            disabled={isLoading}
-            className="w-full p-3 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg
-                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                       transition-all duration-200 ease-in-out disabled:bg-gray-600 disabled:cursor-not-allowed"
-          >
-            {voiceOptions.map((voice) => (
-              <option key={voice.value} value={voice.value}>
-                {voice.label}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-gray-400 mt-1">
-            Currently selected: {getSelectedVoiceLabel()}
-          </p>
-        </div>
+        <VoiceSelector
+          value={selectedVoice}
+          onChange={(e) => setSelectedVoice(e.target.value)}
+          options={voiceOptions}
+          getSelectedVoiceLabel={getSelectedVoiceLabel}
+          disabled={isLoading}
+        />
 
         {/* Text Input Area */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            📝 Enter Text to Speak
-          </label>
-          <div className="relative">
-            <textarea
-              className="w-full h-30 p-4 text-gray-200 text-base bg-gray-700 border border-gray-600 rounded-lg
-                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                         transition-all duration-200 ease-in-out resize-none"
-              placeholder="Type or paste your text here... (Ctrl+Enter to generate speech)"
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              onKeyDown={handleKeyPress}
-              disabled={isLoading}
-              maxLength={500}
-            />
-            <div className="absolute bottom-2 right-2 text-xs text-gray-400">
-              {textInput.length}/500
-            </div>
-          </div>
-        </div>
+        <TextInputArea
+          value={textInput}
+          onChange={(e) => setTextInput(e.target.value)}
+          onKeyDown={handleKeyPress}
+          disabled={isLoading}
+          maxLength={500}
+          currentLength={textInput.length}
+        />
 
         {/* Action Buttons */}
-        <div className="mb-6 flex gap-3">
-          <button
-            onClick={handleSpeak}
-            disabled={
-              isLoading || !textInput.trim() || backendStatus !== "ready"
-            }
-            className="flex-1 py-3 px-6 bg-blue-600 text-white font-semibold rounded-lg
-                       shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500
-                       focus:ring-offset-2 transition-all duration-300 ease-in-out
-                       transform hover:scale-105 active:scale-95 disabled:bg-gray-600 disabled:cursor-not-allowed
-                       disabled:transform-none"
-          >
-            {isLoading ? (
-              <span className="flex items-center justify-center">
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Generating Speech...
-              </span>
-            ) : (
-              "🔊 Generate Speech"
-            )}
-          </button>
-
-          <button
-            onClick={handleClear}
-            disabled={isLoading}
-            className="py-3 px-4 bg-gray-600 text-white font-semibold rounded-lg
-                       shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500
-                       focus:ring-offset-2 transition-all duration-300 ease-in-out
-                       disabled:bg-gray-700 disabled:cursor-not-allowed"
-          >
-            Clear
-          </button>
-        </div>
+        <ActionButtons
+          onSpeak={handleSpeak}
+          onClear={handleClear}
+          isLoading={isLoading}
+          isSpeakDisabled={isLoading || !textInput.trim() || backendStatus !== "ready"}
+          isClearDisabled={isLoading}
+        />
 
         {/* Status Messages */}
-        {isLoading && (
-          <div className="mb-4 p-3 bg-blue-900/50 border border-blue-500 rounded-lg">
-            <p className="text-blue-300 text-sm flex items-center">
-              <svg
-                className="animate-spin -ml-1 mr-3 h-4 w-4 text-blue-300"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Generating audio with {getSelectedVoiceLabel()}...
-            </p>
-          </div>
-        )}
-
-        {isTranslating && (
-          <div className="mb-4 p-3 bg-yellow-900/50 border border-yellow-500 rounded-lg">
-            <p className="text-yellow-300 text-sm flex items-center">
-              <svg
-                className="animate-spin -ml-1 mr-3 h-4 w-4 text-yellow-300"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Translating to selected language...
-            </p>
-          </div>
-        )}
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-900/50 border border-red-500 rounded-lg">
-            <p className="text-red-300 text-sm">❌ {error}</p>
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-4 p-3 bg-green-900/50 border border-green-500 rounded-lg">
-            <p className="text-green-300 text-sm">
-              ✅ Audio generated successfully with {getSelectedVoiceLabel()}!
-            </p>
-          </div>
-        )}
+        <StatusMessage
+          isLoading={isLoading}
+          isTranslating={isTranslating}
+          error={error}
+          success={success}
+          selectedVoiceLabel={getSelectedVoiceLabel()}
+        />
 
         {/* Audio Player */}
-        <div className="text-center">
-          <p className="text-gray-300 text-sm mb-3">
-            Generated audio will appear here:
-          </p>
-          <audio
-            ref={audioRef}
-            controls
-            controlsList="nodownload"
-            className="w-full bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            style={{ height: "54px" }}
-          >
-            Your browser does not support the audio element.
-          </audio>
-        </div>
+        <AudioPlayer audioRef={audioRef} />
 
         {/* Instructions */}
-        <div className="mt-4 text-center">
-          <p className="text-gray-400 text-xs">
-            💡 Tip: Use Ctrl+Enter as a keyboard shortcut to generate speech
-          </p>
-          <p className="text-gray-400 text-xs mt-1">
-            🌍 Supports English, Hindi (हिंदी), and Japanese (日本語) voices
-          </p>
-        </div>
+        <Instructions />
       </div>
     </div>
   );
