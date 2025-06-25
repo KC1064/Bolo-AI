@@ -215,10 +215,10 @@ function App() {
       <div className="bg-gray-800 p-6 sm:p-8 rounded-xl shadow-xl w-full max-w-2xl">
         <div className="text-center mb-6">
           <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2">
-            🎤 Speak AI
+            🎤 Bolo AI
           </h1>
           <p className="text-sm sm:text-base text-gray-300">
-            Convert your text into natural-sounding speech using Coqui TTS
+            Convert your text into natural-sounding speech using Bark TTS
           </p>
         </div>
 
